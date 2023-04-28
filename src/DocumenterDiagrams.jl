@@ -1,22 +1,22 @@
 module DocumenterDiagrams
 
 import Kroki
-import Documenter.Utilities.DOM: DOM, Node
-import Documenter.Utilities.Markdown2: CodeBlock
-import Documenter.Utilities.MDFlatten: mdflatten
-import Documenter.Expanders: ExpanderPipeline, iscode
+import Documenter: AbstractDocumenterBlock
+import Documenter.MarkdownAST: Node, CodeBlock
+import Documenter.Expanders: NestedExpanderPipeline, iscode
 import Documenter.Selectors: order, matcher, runner
-import Documenter.Writers.HTMLWriter: domify
-import Documenter.Writers.LaTeXWriter: Context, latex
+import Documenter.MDFlatten: mdflatten
+import Documenter.HTMLWriter: DOM, DCtx, domify
+import Documenter.LaTeXWriter: Context, latex
 
 # Data
 
 """
 Similar to the `RawBlocks` expander, but generates diagrams instead.
 """
-abstract type DiagramBlocks <: ExpanderPipeline end
+abstract type DiagramBlocks <: NestedExpanderPipeline end
 
-struct DiagramNode
+struct DiagramNode <: AbstractDocumenterBlock
     format::Symbol
     code::String
 end
@@ -29,11 +29,16 @@ function matcher(::Type{DiagramBlocks}, node, page, doc)
     iscode(node, r"^@diagram")
 end
 
-function runner(::Type{DiagramBlocks}, x, page, doc)
-    m = match(r"@diagram[ ](.+)$", x.language)
-    m === nothing && error("invalid '@diagram <format>' syntax: $(x.language)")
+function runner(::Type{DiagramBlocks}, node, page, doc)
+    @assert node.element isa CodeBlock
+    x = node.element
 
-    page.mapping[x] = DiagramNode(Symbol(m[1]), x.code)
+    m = match(r"@diagram[ ](.+)$", x.info)
+    m === nothing && error("invalid '@diagram <format>' syntax: $(x.info)")
+
+    node.element = DiagramNode(Symbol(m[1]), x.code)
+
+    nothing
 end
 
 # Output
@@ -42,7 +47,7 @@ function mdflatten(io, node::Node, e::DiagramNode)
     mdflatten(io, node, CodeBlock("@diagram $(e.format)", e.code))
 end
 
-function domify(ctx, navnode, diag::DiagramNode)
+function domify(::DCtx, ::Node, diag::DiagramNode)
     raw_svg = String(Kroki.render(Kroki.Diagram(diag.format, diag.code), "svg"))
 
     DOM.Tag(Symbol("#RAW#"))(raw_svg)
