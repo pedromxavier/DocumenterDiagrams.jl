@@ -2,6 +2,9 @@
 
 Diagram features for [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl), powered by [Kroki.jl](https://github.com/bauglir/Kroki.jl)
 
+[![CI](https://github.com/pedromxavier/DocumenterDiagrams.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/pedromxavier/DocumenterDiagrams.jl/actions/workflows/ci.yml)
+[![made in BR](https://raw.githubusercontent.com/pedromxavier/flag-badges/main/badges/BR.svg)](https://github.com/pedromxavier/flag-badges)
+
 ## Usage
 
 In your `make.jl` file:
