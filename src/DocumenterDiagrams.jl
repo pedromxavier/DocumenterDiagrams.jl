@@ -1,57 +1,77 @@
 module DocumenterDiagrams
 
 import Kroki
-import Documenter.Utilities.DOM: DOM, Node
-import Documenter.Utilities.Markdown2: CodeBlock
-import Documenter.Utilities.MDFlatten: mdflatten
-import Documenter.Expanders: ExpanderPipeline, iscode
+import MarkdownAST: Node, CodeBlock
+import Documenter
+import Documenter.DOM
+import Documenter.MDFlatten: mdflatten
 import Documenter.Selectors: order, matcher, runner
-import Documenter.Writers.HTMLWriter: domify
-import Documenter.Writers.LaTeXWriter: Context, latex
+import Documenter.HTMLWriter: DCtx, domify
 
 # Data
-
 """
+    DiagramExpander
+
 Similar to the `RawBlocks` expander, but generates diagrams instead.
 """
-abstract type DiagramBlocks <: ExpanderPipeline end
+abstract type DiagramExpander <: Documenter.Expanders.ExpanderPipeline end
 
-struct DiagramNode
+"""
+    DiagramBlock
+"""
+struct DiagramBlock <: Documenter.AbstractDocumenterBlock
+    codeblock::CodeBlock
     format::Symbol
     code::String
 end
 
 # Parsing
+order(::Type{DiagramExpander}) = 10.5
 
-order(::Type{DiagramBlocks}) = 10.5
-
-function matcher(::Type{DiagramBlocks}, node, page, doc)
-    iscode(node, r"^@diagram")
+function matcher(::Type{DiagramExpander}, node, page, doc)
+    return Documenter.iscode(node, r"^@diagram")
 end
 
-function runner(::Type{DiagramBlocks}, x, page, doc)
-    m = match(r"@diagram[ ](.+)$", x.language)
-    m === nothing && error("invalid '@diagram <format>' syntax: $(x.language)")
+function runner(::Type{DiagramExpander}, node, page, doc)
+    block = node.element
 
-    page.mapping[x] = DiagramNode(Symbol(m[1]), x.code)
+    m = match(r"@diagram[ ](.+)$", block.info)
+    
+    if isnothing(m)
+        error("invalid '@diagram <format>' syntax: $(block.info)")
+    end
+
+    format = Symbol(m[1])
+
+    node.element = DiagramBlock(
+        block,      # codeblock
+        format,     # format
+        block.code, # code
+    )
+
+    return nothing
 end
 
 # Output
+function domify(::DCtx, node::Node, ::DiagramBlock)
+    block = node.element
 
-function mdflatten(io, node::Node, e::DiagramNode)
-    mdflatten(io, node, CodeBlock("@diagram $(e.format)", e.code))
+    raw_svg = String(Kroki.render(Kroki.Diagram(block.format, block.code), "svg"))
+
+    return DOM.Tag(Symbol("#RAW#"))(raw_svg)
 end
 
-function domify(ctx, navnode, diag::DiagramNode)
-    raw_svg = String(Kroki.render(Kroki.Diagram(diag.format, diag.code), "svg"))
+# function mdflatten(io, node::Node, e::DiagramBlock)
+#     # mdflatten(io, node, CodeBlock("@diagram $(e.format)", e.code))
+#     return nothing
+# end
 
-    DOM.Tag(Symbol("#RAW#"))(raw_svg)
-end
+abstract type DiagramBuilder <: Documenter.Builder.DocumentPipeline end
 
-function latex(io::Context, ::Node, diag::DiagramNode)
-    # TODO: Not sure about this.
-    # IDEA: write figure as png/pdf and _println \includegraphics since svg (default) is not very LaTeX-friendly
-    nothing
+order(::Type{DiagramBuilder}) = 8.1
+
+function runner(::Type{DiagramBuilder}, doc::Documenter.Document)
+    return nothing
 end
 
 end # module DocumenterDiagrams

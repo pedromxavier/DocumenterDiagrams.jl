@@ -5,16 +5,18 @@ using DocumenterDiagrams
 const DOCS_PATH = joinpath(@__DIR__, "docs")
 
 function main()
-    @time include(joinpath(DOCS_PATH, "make.jl"))
+    include(joinpath(DOCS_PATH, "make.jl"))
 
-    @test isdir(joinpath(DOCS_PATH, "build"))
-    @test isfile(joinpath(DOCS_PATH, "build", "index.html"))
+    @testset "* DocumenterDiagrams.jl Test Suite *" begin
+        @test isdir(joinpath(DOCS_PATH, "build"))
+        @test isfile(joinpath(DOCS_PATH, "build", "index.html"))
 
-    html = read(joinpath(DOCS_PATH, "build", "index.html"), String)
+        html = read(joinpath(DOCS_PATH, "build", "index.html"), String)
 
-    @test !isnothing(match(r"\<svg.*\>.*(DocumenterDiagrams).*\<\/svg\>", html))
+        @test !isnothing(match(r"\<svg.*\>.*(DocumenterDiagrams).*\<\/svg\>", html))
 
-    rm(joinpath(DOCS_PATH, "build"); recursive=true, force=true)
+        rm(joinpath(DOCS_PATH, "build"); recursive=true, force=true)
+    end
 
     return nothing
 end

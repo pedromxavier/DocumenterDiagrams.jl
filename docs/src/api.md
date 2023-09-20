@@ -1,5 +1,6 @@
 # DocumenterDiagrams.jl API
 
 ```@docs
-DocumenterDiagrams.DiagramBlocks
+DocumenterDiagrams.DiagramBlock
+DocumenterDiagrams.DiagramExpander
 ```
