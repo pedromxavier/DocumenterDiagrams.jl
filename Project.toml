@@ -12,5 +12,6 @@ TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 [compat]
 Documenter = "1"
 Kroki = "0.2"
+MarkdownAST = "~0.1"
 TranscodingStreams = "=0.9.11"
 julia = "1.6"
